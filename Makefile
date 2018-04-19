@@ -24,7 +24,7 @@ CYCLONELIB=./lib/linux/$(LIBNAME)
 
 DEMO_CPP=./src/demos/app.cpp ./src/demos/timing.cpp ./src/demos/main.cpp
 
-DEMOS=ballistic bigballistic blob bridge explosion fireworks flightsim fracture platform ragdoll sailboat
+DEMOS=tankgame
 
 
 # OUTPUT DIRECTORIES
@@ -55,14 +55,4 @@ $(DEMOS):
 clean:
 	$(rm) src/*.o lib/linux/libcyclone.a
 	$(rm)		\
-	./bin/linux/fireworks		\
-	./bin/linux/fracture		\
-	./bin/linux/flightsim		\
-	./bin/linux/bridge		\
-	./bin/linux/sailboat		\
-	./bin/linux/explosion		\
-	./bin/linux/ballistic		\
-	./bin/linux/platform		\
-	./bin/linux/bigballistic	\
-	./bin/linux/blob		\
-	./bin/linux/ragdoll
+	./bin/linux/ex65			

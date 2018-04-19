@@ -23,7 +23,8 @@ enum ShotType
     PISTOL,
     ARTILLERY,
     FIREBALL,
-    LASER
+    LASER,
+    GRENADE
 };
 
 class AmmoRound : public cyclone::CollisionSphere
@@ -95,6 +96,14 @@ public:
             body->setAcceleration(0.0f, 0.0f, 0.0f); // No gravity
             body->setDamping(0.99f, 0.8f);
             radius = 0.2f;
+            break;
+                
+        case GRENADE:
+            body->setMass(1000.0f); // 1000.0kg
+            body->setVelocity(0.0f, 30.0f, 9.7f);
+            body->setAcceleration(0.0f, -30.0f, 0.0f);
+            body->setDamping(0.99f, 0.8f);
+            radius = 0.3f;
             break;
         }
 
@@ -383,7 +392,7 @@ void BigBallisticDemo::display()
 
     // Render the description
     glColor3f(0.0f, 0.0f, 0.0f);
-    renderText(10.0f, 34.0f, "Click: Fire\n1-4: Select Ammo");
+    renderText(10.0f, 34.0f, "Click: Fire\n1-5: Select Ammo");
 
     // Render the name of the current shot type
     switch(currentShotType)
@@ -392,6 +401,7 @@ void BigBallisticDemo::display()
     case ARTILLERY: renderText(10.0f, 10.0f, "Current Ammo: Artillery"); break;
     case FIREBALL: renderText(10.0f, 10.0f, "Current Ammo: Fireball"); break;
     case LASER: renderText(10.0f, 10.0f, "Current Ammo: Laser"); break;
+    case GRENADE: renderText(10.0f, 10.0f, "Current Ammo: Grenade"); break;
     }
 }
 
@@ -448,6 +458,7 @@ void BigBallisticDemo::key(unsigned char key)
     case '2': currentShotType = ARTILLERY; break;
     case '3': currentShotType = FIREBALL; break;
     case '4': currentShotType = LASER; break;
+    case '5': currentShotType = GRENADE; break;
 
     case 'r': case 'R': reset(); break;
     }

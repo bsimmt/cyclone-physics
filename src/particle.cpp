@@ -163,3 +163,14 @@ void Particle::addForce(const Vector3 &force)
 {
     forceAccum += force;
 }
+
+/*
+real Particle::getKineticEnergy() const {
+    if (getInverseMass() <= 0) {
+        return 0;
+    }
+    else {
+        // TODO write equation
+        return 0;
+    }
+}*/

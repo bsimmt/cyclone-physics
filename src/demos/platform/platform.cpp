@@ -17,11 +17,14 @@
 
 #include <stdio.h>
 #include <cassert>
+#include <cmath>
 
-#define ROD_COUNT 15
+#define ROD_COUNT 24
 
 #define BASE_MASS 1
-#define EXTRA_MASS 10
+#define EXTRA_MASS 100
+
+#define PARTICLE_COUNT 8
 
 /**
  * The main demo class definition.
@@ -60,17 +63,21 @@ public:
 // Method definitions
 PlatformDemo::PlatformDemo()
 :
-MassAggregateApplication(6), rods(0),
+MassAggregateApplication(PARTICLE_COUNT), rods(0),
 massPos(0,0,0.5f)
 {
+    int rodLength = 5;
+
     // Create the masses and connections.
-    particleArray[0].setPosition(0,0,1);
-    particleArray[1].setPosition(0,0,-1);
-    particleArray[2].setPosition(-3,2,1);
-    particleArray[3].setPosition(-3,2,-1);
-    particleArray[4].setPosition(4,2,1);
-    particleArray[5].setPosition(4,2,-1);
-    for (unsigned i = 0; i < 6; i++)
+    particleArray[0].setPosition(0,0,rodLength);
+    particleArray[1].setPosition(0,0,-rodLength);
+    particleArray[2].setPosition(rodLength,0,rodLength);
+    particleArray[3].setPosition(rodLength,0,-rodLength);
+    particleArray[4].setPosition(0,rodLength,rodLength);
+    particleArray[5].setPosition(0,rodLength,-rodLength);
+    particleArray[6].setPosition(rodLength,rodLength,rodLength);
+    particleArray[7].setPosition(rodLength,rodLength,-rodLength);
+    for (unsigned i = 0; i < PARTICLE_COUNT; i++)
     {
         particleArray[i].setMass(BASE_MASS);
         particleArray[i].setVelocity(0,0,0);
@@ -81,55 +88,102 @@ massPos(0,0,0.5f)
 
     rods = new cyclone::ParticleRod[ROD_COUNT];
 
+    // edges
     rods[0].particle[0] = &particleArray[0];
     rods[0].particle[1] = &particleArray[1];
-    rods[0].length = 2;
-    rods[1].particle[0] = &particleArray[2];
-    rods[1].particle[1] = &particleArray[3];
-    rods[1].length = 2;
-    rods[2].particle[0] = &particleArray[4];
-    rods[2].particle[1] = &particleArray[5];
-    rods[2].length = 2;
+    rods[0].length = rodLength;
+    rods[1].particle[0] = &particleArray[0];
+    rods[1].particle[1] = &particleArray[2];
+    rods[1].length = rodLength;
 
-    rods[3].particle[0] = &particleArray[2];
-    rods[3].particle[1] = &particleArray[4];
-    rods[3].length = 7;
-    rods[4].particle[0] = &particleArray[3];
-    rods[4].particle[1] = &particleArray[5];
-    rods[4].length = 7;
+    rods[2].particle[0] = &particleArray[2];
+    rods[2].particle[1] = &particleArray[3];
+    rods[2].length = rodLength;
+    rods[3].particle[0] = &particleArray[3];
+    rods[3].particle[1] = &particleArray[1];
+    rods[3].length = rodLength;
 
-    rods[5].particle[0] = &particleArray[0];
-    rods[5].particle[1] = &particleArray[2];
-    rods[5].length = 3.606;
+    rods[4].particle[0] = &particleArray[0];
+    rods[4].particle[1] = &particleArray[4];
+    rods[4].length = rodLength;
+    rods[5].particle[0] = &particleArray[2];
+    rods[5].particle[1] = &particleArray[6];
+    rods[5].length = rodLength;
+
     rods[6].particle[0] = &particleArray[1];
-    rods[6].particle[1] = &particleArray[3];
-    rods[6].length = 3.606;
+    rods[6].particle[1] = &particleArray[5];
+    rods[6].length = rodLength;
+    rods[7].particle[0] = &particleArray[3];
+    rods[7].particle[1] = &particleArray[7];
+    rods[7].length = rodLength;
 
-    rods[7].particle[0] = &particleArray[0];
-    rods[7].particle[1] = &particleArray[4];
-    rods[7].length = 4.472;
-    rods[8].particle[0] = &particleArray[1];
-    rods[8].particle[1] = &particleArray[5];
-    rods[8].length = 4.472;
+    rods[8].particle[0] = &particleArray[4];
+    rods[8].particle[1] = &particleArray[6];
+    rods[8].length = rodLength;
+    rods[9].particle[0] = &particleArray[6];
+    rods[9].particle[1] = &particleArray[7];
+    rods[9].length = rodLength;
 
-    rods[9].particle[0] = &particleArray[0];
-    rods[9].particle[1] = &particleArray[3];
-    rods[9].length = 4.123;
-    rods[10].particle[0] = &particleArray[2];
+    rods[10].particle[0] = &particleArray[7];
     rods[10].particle[1] = &particleArray[5];
-    rods[10].length = 7.28;
-    rods[11].particle[0] = &particleArray[4];
-    rods[11].particle[1] = &particleArray[1];
-    rods[11].length = 4.899;
-    rods[12].particle[0] = &particleArray[1];
-    rods[12].particle[1] = &particleArray[2];
-    rods[12].length = 4.123;
-    rods[13].particle[0] = &particleArray[3];
-    rods[13].particle[1] = &particleArray[4];
-    rods[13].length = 7.28;
-    rods[14].particle[0] = &particleArray[5];
-    rods[14].particle[1] = &particleArray[0];
-    rods[14].length = 4.899;
+    rods[10].length = rodLength;
+    rods[11].particle[0] = &particleArray[5];
+    rods[11].particle[1] = &particleArray[4];
+    rods[11].length = rodLength;
+
+    // diagonal
+    double diagLength = 7.071;
+
+    rods[12].particle[0] = &particleArray[0];
+    rods[12].particle[1] = &particleArray[6];
+    rods[12].length = diagLength;
+    rods[13].particle[0] = &particleArray[4];
+    rods[13].particle[1] = &particleArray[2];
+    rods[13].length = diagLength;
+    rods[14].particle[0] = &particleArray[0];
+    rods[14].particle[1] = &particleArray[5];
+    rods[14].length = diagLength;
+    rods[15].particle[0] = &particleArray[1];
+    rods[15].particle[1] = &particleArray[4];
+    rods[15].length = diagLength;
+
+    rods[16].particle[0] = &particleArray[1];
+    rods[16].particle[1] = &particleArray[7];
+    rods[16].length = diagLength;
+    rods[17].particle[0] = &particleArray[3];
+    rods[17].particle[1] = &particleArray[5];
+    rods[17].length = diagLength;
+
+    rods[18].particle[0] = &particleArray[3];
+    rods[18].particle[1] = &particleArray[6];
+    rods[18].length = diagLength;
+    rods[19].particle[0] = &particleArray[2];
+    rods[19].particle[1] = &particleArray[7];
+    rods[19].length = diagLength;
+
+    rods[20].particle[0] = &particleArray[4];
+    rods[20].particle[1] = &particleArray[7];
+    rods[20].length = diagLength;
+    rods[21].particle[0] = &particleArray[5];
+    rods[21].particle[1] = &particleArray[6];
+    rods[21].length = diagLength;
+
+    rods[22].particle[0] = &particleArray[0];
+    rods[22].particle[1] = &particleArray[3];
+    rods[22].length = diagLength;
+    rods[23].particle[0] = &particleArray[1];
+    rods[23].particle[1] = &particleArray[2];
+    rods[23].length = diagLength;
+    /*
+    rods[14].particle[0] = &particleArray[7];
+    rods[14].particle[1] = &particleArray[5];
+    rods[14].length = rodLength;
+    rods[15].particle[0] = &particleArray[5];
+    rods[15].particle[1] = &particleArray[4];
+    rods[15].length = rodLength;
+    */
+
+    
 
     for (unsigned i = 0; i < ROD_COUNT; i++)
     {
@@ -146,7 +200,7 @@ PlatformDemo::~PlatformDemo()
 
 void PlatformDemo::updateAdditionalMass()
 {
-    for (unsigned i = 2; i < 6; i++)
+    for (unsigned i = 0; i < PARTICLE_COUNT; i++)
     {
         particleArray[i].setMass(BASE_MASS);
     }

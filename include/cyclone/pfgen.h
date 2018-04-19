@@ -39,10 +39,121 @@ namespace cyclone {
         virtual void updateForce(Particle *particle, real duration) = 0;
     };
 
+    // 5.1
+    class ParticleUplift : public ParticleForceGenerator {
+        Vector3 upforce;
+        Vector3 origin;
+        real rad;
+
+    public:
+        ParticleUplift(const Vector3 &upforce, const Vector3 &origin, real rad);
+
+        virtual void updateForce(Particle *particle, real duration);
+    };
+
+    // 5.2
+    class ParticleAirbrake : public ParticleForceGenerator
+    {
+        /** Holds the velocity drag coeffificent. */
+        real k1;
+
+        /** Holds the velocity squared drag coeffificent. */
+        real k2;
+
+        bool brake;
+
+    public:
+
+        /** Creates the generator with the given coefficients. */
+        ParticleAirbrake(real k1, real k2, bool brake);
+
+        /** Applies the drag force to the given particle. */
+        virtual void updateForce(Particle *particle, real duration);
+    };
+
+    // 5.3 & 5.4
+    class ParticleGravityAttract : public ParticleForceGenerator
+    {
+        /** Holds the acceleration due to gravity. */
+        Vector3 point;
+        real gravity;
+        real m2;
+
+    public:
+
+        /** Creates the generator with the given acceleration. */
+        ParticleGravityAttract(const Vector3 &point, real gravity, real m2);
+
+        /** Applies the gravitational force to the given particle. */
+        virtual void updateForce(Particle *particle, real duration);
+    };
+
+    // 6.1
+    class ParticleLimitedSpring : public ParticleForceGenerator
+    {
+        /** The particle at the other end of the spring. */
+        Particle *other;
+
+        /** Holds the sprint constant. */
+        real springConstant;
+
+        /** Holds the rest length of the spring. */
+        real restLength;
+
+        real maxDist;
+
+    public:
+
+        /** Creates a new spring with the given parameters. */
+        ParticleLimitedSpring(Particle *other,
+            real springConstant, real restLength, real maxDist);
+
+        /** Applies the spring force to the given particle. */
+        virtual void updateForce(Particle *particle, real duration);
+    };
+    /*
+    // 6.2
+    class ParticleAirBuoyancy : public ParticleForceGenerator
+    {
+    	Vector3 gravity;
+
+        real volume;
+
+        real airDensity;
+
+    public:
+	*/
+        /** Creates a new buoyancy force with the given parameters. */
+        //ParticleAirBuoyancy(real volume, real airDensity = 1.225f);
+
+        /** Applies the buoyancy force to the given particle. */
+        //virtual void updateForce(Particle *particle, real duration);
+    //};
+
     /**
      * A force generator that applies a gravitational force. One instance
      * can be used for multiple particles.
      */
+
+    // 6.2
+    class ParticleAirBuoyancy : public ParticleForceGenerator
+    {
+        real maxAltitude;
+
+        real volume;
+
+        real airDensity;
+
+    public:
+
+        /** Creates a new buoyancy force with the given parameters. */
+        ParticleAirBuoyancy(real maxAltitude, real volume,
+            real airDensity = 1.225f);
+
+        /** Applies the buoyancy force to the given particle. */
+        virtual void updateForce(Particle *particle, real duration);
+    };
+
     class ParticleGravity : public ParticleForceGenerator
     {
         /** Holds the acceleration due to gravity. */

@@ -37,7 +37,7 @@ void Application::display()
 
     glBegin(GL_LINES);
     glVertex2i(1, 1);
-    glVertex2i(639, 319);
+    glVertex2i(1280, 720);
     glEnd();
 }
 
