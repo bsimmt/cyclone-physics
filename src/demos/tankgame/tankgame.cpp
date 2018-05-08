@@ -40,6 +40,8 @@ public:
 	unsigned startTime;
 	float grav;
 	float wind;
+	float aimX;
+	float aimY;
 
 	AmmoRound()
 	{
@@ -68,6 +70,11 @@ public:
 		AmmoRound::grav = grav;
 	}
 
+	void setAim(float aimX, float aimY) {
+		AmmoRound::aimX = aimX;
+		AmmoRound::aimY = aimY;
+	}
+
 	/** Sets the box to a specific location. */
 	void setState(ShotType shotType)
 	{
@@ -80,7 +87,7 @@ public:
 		{
 		case PISTOL:
 			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
 			radius = 2.0f;
@@ -88,7 +95,7 @@ public:
 
 		case ARTILLERY:
 			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
 			radius = 2.0f;
@@ -96,7 +103,7 @@ public:
 
 		case FIREBALL:
 			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
 			radius = 2.0f;
@@ -104,7 +111,7 @@ public:
 
 		case LASER:
 			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setVelocity(0.0f, aimX, aimY); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
 			radius = 2.0f;
@@ -282,6 +289,8 @@ class BigBallisticDemo : public RigidBodyApplication
 
 	float grav;
 	float wind;
+	float aimX;
+	float aimY;
 
 
 public:
@@ -330,6 +339,8 @@ void BigBallisticDemo::initGraphics()
 
 void BigBallisticDemo::reset()
 {
+	aimX = 40.0f;
+	aimY = 60.0f;
 	// randomize gravity on round reset
 	grav = (float)(-35 + rand() % 20);
 
@@ -337,6 +348,7 @@ void BigBallisticDemo::reset()
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 	{
 		shot->setGravity(grav);
+		shot->setAim(aimX, aimY);
 		shot->type = UNUSED;
 	}
 
@@ -374,6 +386,7 @@ void BigBallisticDemo::fire()
 	if (shot >= ammo+ammoRounds) return;
 
 	// Set the shot
+	shot->setAim(aimX, aimY);
 	shot->setState(currentShotType);
 	wind = shot->getWind();
 }
@@ -470,6 +483,16 @@ void BigBallisticDemo::display()
 	glDisable(GL_COLOR_MATERIAL);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
+
+
+	/* draw aiming line
+	glLineWidth(3); 
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glBegin(GL_LINES);
+	glVertex3f(0.0f, 2.0f, 0.0f);
+	glVertex3f(0.0f, 2.0f, 10.0f);
+	glEnd();
+	*/
 
 	// Render the description
 	glColor3f(0.0f, 0.0f, 0.0f);
@@ -579,6 +602,10 @@ void BigBallisticDemo::key(unsigned char key)
 
 	case 'r': reset(); break;
 
+	case 'w': aimX+=10.0; aimY-=10; break;
+	case 's': aimX-=10.0; aimY+=10; break;
+
+	/*
 	case 'a': x1+=1.0; break;
 	case 's': y1+=1.0; break;
 	case 'd': z1+=1.0; break;
@@ -592,12 +619,13 @@ void BigBallisticDemo::key(unsigned char key)
 	case 'b': x2-=1.0; break;
 	case 'n': y2-=1.0; break;
 	case 'm': z2-=1.0; break;
+	*/
+
 	}
 
-	/*
-	std::cout << "x1:" << x1 << " y1:" << y1 << " z1:" << z1 << std::endl;
-	std::cout << "x2:" << x2 << " y2:" << y2 << " z2:" << z2 << std::endl;
-	*/
+	
+	std::cout << "aimX:" << aimX << std::endl;
+	
 
 }
 
