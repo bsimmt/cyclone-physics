@@ -342,7 +342,7 @@ void BigBallisticDemo::reset()
 	aimX = 40.0f;
 	aimY = 60.0f;
 	// randomize gravity on round reset
-	grav = (float)(-35 + rand() % 20);
+	grav = (float)(-50 + rand() % 25);
 
 	// Make all shots unused
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
