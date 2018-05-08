@@ -16,7 +16,13 @@
 #include "../timing.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
+#include <string.h>
+#include <iomanip>
+#include <sstream>
+
+using namespace std;
 
 enum ShotType
 {
@@ -32,6 +38,8 @@ class AmmoRound : public cyclone::CollisionSphere
 public:
 	ShotType type;
 	unsigned startTime;
+	float grav;
+	float wind;
 
 	AmmoRound()
 	{
@@ -56,46 +64,50 @@ public:
 		glPopMatrix();
 	}
 
+	void setGravity(float grav) {
+		AmmoRound::grav = grav;
+	}
+
 	/** Sets the box to a specific location. */
 	void setState(ShotType shotType)
 	{
 		type = shotType;
+		// randomize wind per shot
+		wind = (float)(-25 + rand() % 75);
 
 		// Set the properties of the particle
 		switch(type)
 		{
 		case PISTOL:
-			body->setMass(1.5f);
-			body->setVelocity(0.0f, 0.0f, 20.0f);
-			body->setAcceleration(0.0f, -0.5f, 0.0f);
+			body->setMass(750.0f); // 200.0kg
+			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
-			radius = 0.2f;
+			radius = 2.0f;
 			break;
 
 		case ARTILLERY:
-			body->setMass(2000.0f); // 200.0kg
+			body->setMass(750.0f); // 200.0kg
 			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
-			body->setAcceleration(0.0f, -21.0f, 0.0f);
+			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
 			radius = 2.0f;
 			break;
 
 		case FIREBALL:
-			body->setMass(4.0f); // 4.0kg - mostly blast damage
-			body->setVelocity(0.0f, -0.5f, 10.0); // 10m/s
-			body->setAcceleration(0.0f, 0.3f, 0.0f); // Floats up
-			body->setDamping(0.9f, 0.8f);
-			radius = 0.6f;
+			body->setMass(750.0f); // 200.0kg
+			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setAcceleration(0.0f, grav, wind);
+			body->setDamping(0.99f, 0.8f);
+			radius = 2.0f;
 			break;
 
 		case LASER:
-			// Note that this is the kind of laser bolt seen in films,
-			// not a realistic laser beam!
-			body->setMass(0.1f); // 0.1kg - almost no weight
-			body->setVelocity(0.0f, 0.0f, 100.0f); // 100m/s
-			body->setAcceleration(0.0f, 0.0f, 0.0f); // No gravity
+			body->setMass(750.0f); // 200.0kg
+			body->setVelocity(0.0f, 60.0f, 40.0f); // 50m/s
+			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
-			radius = 0.2f;
+			radius = 2.0f;
 			break;
 		}
 
@@ -115,12 +127,18 @@ public:
 		body->calculateDerivedData();
 		calculateInternals();
 	}
+
+	float getWind() {
+		return wind;
+	}
+
 };
 
 class Box : public cyclone::CollisionBox
 {
 public:
 	bool isOverlapping;
+	float randMass;
 
     Box()
     {
@@ -139,9 +157,17 @@ public:
         GLfloat mat[16];
         body->getGLTransform(mat);
 
-        if (isOverlapping) glColor3f(0.7f,1.0f,0.7f);
-        else if (body->getAwake()) glColor3f(1.0f,0.7f,0.7f);
-        else glColor3f(0.7f,0.7f,1.0f);
+        glColor3f(0.0f,1.0f,0.0f);
+
+        if(randMass > 75) {
+        	glColor3f(1.0f,0.0f,0.0f);
+        }
+        else if(randMass > 50) {
+        	glColor3f(0.5f,0.0f,0.0f);
+        }
+        else if(randMass > 25) {
+        	glColor3f(0.5f,1.0f,0.7f);
+        }
 
         glPushMatrix();
         glMultMatrixf(mat);
@@ -174,7 +200,14 @@ public:
 		body->setRotation(cyclone::Vector3(0,0,0));
 		halfSize = cyclone::Vector3(5,5,5);
 
-		cyclone::real mass = halfSize.x * halfSize.y * halfSize.z * 1.0f;
+		randMass = (float)(rand() % 100);\
+		for(int i=0; i<1; i++) {
+			if(randMass > 50) {
+				randMass = (float)(rand() % 100);
+			}
+		}
+		std::cout << "randMass: " << to_string(randMass) << std::endl;
+		cyclone::real mass = halfSize.x+randMass * halfSize.y+randMass * halfSize.z+randMass * 1.0f;
 		body->setMass(mass);
 
 		cyclone::Matrix3 tensor;
@@ -247,6 +280,8 @@ class BigBallisticDemo : public RigidBodyApplication
 	double y3 = 1.0;
 	double z3 = 0.0;
 
+	float grav;
+	float wind;
 
 
 public:
@@ -295,9 +330,13 @@ void BigBallisticDemo::initGraphics()
 
 void BigBallisticDemo::reset()
 {
+	// randomize gravity on round reset
+	grav = (float)(-35 + rand() % 20);
+
 	// Make all shots unused
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 	{
+		shot->setGravity(grav);
 		shot->type = UNUSED;
 	}
 
@@ -319,7 +358,7 @@ void BigBallisticDemo::reset()
 
 const char* BigBallisticDemo::getTitle()
 {
-	return "Cyclone > Big Ballistic Demo";
+	return "Tank Game";
 }
 
 void BigBallisticDemo::fire()
@@ -336,7 +375,7 @@ void BigBallisticDemo::fire()
 
 	// Set the shot
 	shot->setState(currentShotType);
-
+	wind = shot->getWind();
 }
 
 void BigBallisticDemo::updateObjects(cyclone::real duration)
@@ -434,9 +473,34 @@ void BigBallisticDemo::display()
 
 	// Render the description
 	glColor3f(0.0f, 0.0f, 0.0f);
-	renderText(10.0f, 34.0f, "Click: Fire\n1-4: Select Ammo");
+	/*
+	char *text = "Gravity: ";
+	char *floatText = to_string(grav);
+	char *gravText;
+	gravText = malloc(strlen(text)+1+4);
+	strcpy(name_with_extension, text);
+	strcat(name_with_extension, floatText);*/
+	stringstream stream;
+	stream << fixed << setprecision(2) << (grav/2);
+	string s = stream.str();
+	string gravText = "Gravity: " + s + "m/s";
+	int n = gravText.length(); 
+    char grav_array[n+1];
+    strcpy(grav_array, gravText.c_str());
+
+    stringstream wstream;
+	wstream << fixed << setprecision(2) << (wind/2);
+	string ws = wstream.str();
+	string windText = "Wind: " + ws + "m/s";
+	int wn = windText.length(); 
+    char wind_array[wn+1];
+    strcpy(wind_array, windText.c_str());
+
+	renderText(10.0f, 34.0f, grav_array);
+	renderText(10.0f, 10.0f, wind_array);
 
 	// Render the name of the current shot type
+	/*
 	switch(currentShotType)
 	{
 	case PISTOL: renderText(10.0f, 10.0f, "Current Ammo: Pistol"); break;
@@ -444,6 +508,7 @@ void BigBallisticDemo::display()
 	case FIREBALL: renderText(10.0f, 10.0f, "Current Ammo: Fireball"); break;
 	case LASER: renderText(10.0f, 10.0f, "Current Ammo: Laser"); break;
 	}
+	*/
 }
 
 void BigBallisticDemo::generateContacts()
@@ -529,8 +594,10 @@ void BigBallisticDemo::key(unsigned char key)
 	case 'm': z2-=1.0; break;
 	}
 
+	/*
 	std::cout << "x1:" << x1 << " y1:" << y1 << " z1:" << z1 << std::endl;
 	std::cout << "x2:" << x2 << " y2:" << y2 << " z2:" << z2 << std::endl;
+	*/
 
 }
 

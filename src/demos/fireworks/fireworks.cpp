@@ -16,9 +16,6 @@
 #include "../timing.h"
 
 #include <stdio.h>
-#include <iostream>
-#include <sstream>
-#include <string>
 
 static cyclone::Random crandom;
 
@@ -51,10 +48,7 @@ public:
 
         // We work backwards from our age to zero.
         age -= duration;
-        return (position.y < 0); /** returns boolean if ready to execute
-        										* payload based on age, or if it hits
-        										* the bottom of the field
-        										*/
+        return (age < 0) || (position.y < 0);
     }
 };
 
@@ -161,8 +155,7 @@ struct FireworkRule
         {
             cyclone::Vector3 start;
             int x = (int)crandom.randomInt(3) - 1;
-            //start.x = 5.0f * cyclone::real(x);
-            start.x = 5.0f * cyclone::real(0);
+            start.x = 5.0f * cyclone::real(x);
             firework->setPosition(start);
         }
 
@@ -191,19 +184,6 @@ class FireworksDemo : public Application
      * Holds the maximum number of fireworks that can be in use.
      */
     const static unsigned maxFireworks = 1024;
-    
-    /** Keep track of game score */
-    int score = 0;
-    
-    /** Mouse pressed state */
-    bool isPressed = false;
-    
-    /** Firework hit state */
-    bool isHit = false;
-    
-    /** Mouse coordinates */
-    float mousex = 0;
-    float mousey = 0;
 
     /** Holds the firework data. */
     Firework fireworks[maxFireworks];
@@ -212,7 +192,7 @@ class FireworksDemo : public Application
     unsigned nextFirework;
 
     /** And the number of rules. */
-    const static unsigned ruleCount = 11;
+    const static unsigned ruleCount = 9;
 
     /** Holds the set of rules. */
     FireworkRule rules[ruleCount];
@@ -225,6 +205,7 @@ class FireworksDemo : public Application
 
     /** Creates the rules. */
     void initFireworkRules();
+
 public:
     /** Creates a new demo object. */
     FireworksDemo();
@@ -244,9 +225,6 @@ public:
 
     /** Handle a keypress. */
     virtual void key(unsigned char key);
-    
-    /** Handle a mouse click. */
-    virtual void mouse(int button, int state, int x, int y);
 };
 
 // Method definitions
@@ -331,54 +309,34 @@ void FireworksDemo::initFireworkRules()
         0.95 // damping
         );
 
-    rules[6].init(3);
+    rules[6].init(1);
     rules[6].setParameters(
         7, // type
-        3, 5, // age range
-        cyclone::Vector3(-20, 25, 0), // min velocity
-        cyclone::Vector3(20, 25, 0), // max velocity
-        0.001 // damping
+        4, 5, // age range
+        cyclone::Vector3(-5, 50, -5), // min velocity
+        cyclone::Vector3(5, 60, 5), // max velocity
+        0.01 // damping
         );
-	rules[6].payloads[0].set(10, 1);
-	rules[6].payloads[1].set(7, 1);
-	rules[6].payloads[2].set(8, 1);
-    
-    
-    /** GAME RULES */
-	rules[7].init(3);
+    rules[6].payloads[0].set(8, 10);
+
+    rules[7].init(0);
     rules[7].setParameters(
         8, // type
-        3, 5, // age range
-        cyclone::Vector3(-10, 15, 0), // min velocity
-        cyclone::Vector3(10, 15, 0), // max velocity
-        0.001 // damping
+        0.25f, 0.5f, // age range
+        cyclone::Vector3(-1, -1, -1), // min velocity
+        cyclone::Vector3(1, 1, 1), // max velocity
+        0.01 // damping
         );
-	rules[7].payloads[0].set(10, 1);
-	rules[7].payloads[1].set(7, 1);
-	rules[7].payloads[2].set(8, 1);
 
-
-    rules[8].init(1);
+    rules[8].init(0);
     rules[8].setParameters(
         9, // type
         3, 5, // age range
-        cyclone::Vector3(-25, 26, 0), // min velocity
-        cyclone::Vector3(25, 26, 0), // max velocity
-        0.01 // damping
+        cyclone::Vector3(-15, 10, -5), // min velocity
+        cyclone::Vector3(15, 15, 5), // max velocity
+        0.95 // damping
         );
-	rules[8].payloads[0].set(10, 1);
-	
-	rules[9].init(3);
-    rules[9].setParameters(
-        10, // type
-        3, 5, // age range
-        cyclone::Vector3(-15, 20, 0), // min velocity
-        cyclone::Vector3(15, 20, 0), // max velocity
-        0.001 // damping
-        );
-	rules[9].payloads[0].set(10, 1);
-	rules[9].payloads[1].set(7, 1);
-	rules[9].payloads[2].set(8, 1);
+    // ... and so on for other firework types ...
 }
 
 void FireworksDemo::initGraphics()
@@ -428,37 +386,25 @@ void FireworksDemo::update()
         // Check if we need to process this firework.
         if (firework->type > 0)
         {
-        	// Hit bottom then remove
-        	if(firework->update(duration)) {
-        		score -= 1;
-        	 	// Delete the current firework
-                firework->type = 0;
-        	}
-        
-        	const static cyclone::real size = 0.1f;
-			const cyclone::Vector3 &pos = firework->getPosition();
-			if(isPressed) {
-				if(mousex <= pos.x+(size*4) && mousex >= pos.x-(size*4)) {
-					if(mousey <= pos.y+(size*4) && mousey >= pos.y-(size*4)) {
-						// Find the appropriate rule
-						FireworkRule *rule = rules + (firework->type-1);
+            // Does it need removing?
+            if (firework->update(duration))
+            {
+                // Find the appropriate rule
+                FireworkRule *rule = rules + (firework->type-1);
 
-						// Delete the current firework (this doesn't affect its
-						// position and velocity for passing to the create function,
-						// just whether or not it is processed for rendering or
-						// physics.
-						firework->type = 0;
-							
-						// Add the payload
-						for (unsigned i = 0; i < rule->payloadCount; i++)
-						{
-							FireworkRule::Payload * payload = rule->payloads + i;
-							create(payload->type, payload->count, firework);
-							score += i;
-						}
-					}
-				}	
-			}
+                // Delete the current firework (this doesn't affect its
+                // position and velocity for passing to the create function,
+                // just whether or not it is processed for rendering or
+                // physics.
+                firework->type = 0;
+
+                // Add the payload
+                for (unsigned i = 0; i < rule->payloadCount; i++)
+                {
+                    FireworkRule::Payload * payload = rule->payloads + i;
+                    create(payload->type, payload->count, firework);
+                }
+            }
         }
     }
 
@@ -466,13 +412,13 @@ void FireworksDemo::update()
 }
 
 void FireworksDemo::display()
-{			
+{
     const static cyclone::real size = 0.1f;
 
     // Clear the viewport and set the camera direction
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    gluLookAt(0.0, 0.0, 10.0,  0.0, 0.0, 0.0,  0.0, 1.0, 0.0);
+    gluLookAt(0.0, 4.0, 10.0,  0.0, 4.0, 0.0,  0.0, 1.0, 0.0);
 
     // Render each firework in turn
     glBegin(GL_QUADS);
@@ -494,7 +440,6 @@ void FireworksDemo::display()
             case 7: glColor3f(1,0,1); break;
             case 8: glColor3f(1,1,1); break;
             case 9: glColor3f(1,0.5f,0.5f); break;
-            case 10: glColor3f(0.75f,0.5f,0.1f); break;
             };
 
             const cyclone::Vector3 &pos = firework->getPosition();
@@ -502,86 +447,15 @@ void FireworksDemo::display()
             glVertex3f(pos.x+size, pos.y-size, pos.z);
             glVertex3f(pos.x+size, pos.y+size, pos.z);
             glVertex3f(pos.x-size, pos.y+size, pos.z);
-            
-            
-            /*
-            glVertex3f(0-size, 0-size, pos.z);
-            glVertex3f(0+size, 0-size, pos.z);
-            glVertex3f(0+size, 0+size, pos.z);
-            glVertex3f(0-size, 0+size, pos.z);
-            
-            glVertex3f(11.5-size, 5.5-size, pos.z);
-            glVertex3f(11.5+size, 5.5-size, pos.z);
-            glVertex3f(11.5+size, 5.5+size, pos.z);
-            glVertex3f(11.5-size, 5.5+size, pos.z);
-			
-			glVertex3f(-11.5-size, -5.5-size, pos.z);
-            glVertex3f(-11.5+size, -5.5-size, pos.z);
-            glVertex3f(-11.5+size, -5.5+size, pos.z);
-            glVertex3f(-11.5-size, -5.5+size, pos.z);
-            */
 
-			/*
             // Render the firework's reflection
             glVertex3f(pos.x-size, -pos.y-size, pos.z);
             glVertex3f(pos.x+size, -pos.y-size, pos.z);
             glVertex3f(pos.x+size, -pos.y+size, pos.z);
             glVertex3f(pos.x-size, -pos.y+size, pos.z);
-            */
-            
-            /*
-            if (isPressed) {
-				std::cout << "firew_x: " << pos.x << std::endl;
-				std::cout << "firew_y: " << pos.y << std::endl;
-				std::cout << "mouse_x: " << mousex << std::endl;
-				std::cout << "mouse_y: " << mousey << std::endl;
-			}
-			*/
-            
-           	
         }
     }
-    
-    /*
-    std::cout << "mouse_x: " << mousex << std::endl;
-    std::cout << "mouse_y: " << mousey << std::endl;
-    */
-    
-    
-    /*
-    GLint viewport[4];
-	glGetIntegerv(GL_VIEWPORT,viewport);
-	
-    std::cout<<"height:"<<GLUT_SCREEN_HEIGHT<<"\n";
-    std::cout<<"height:"<<GLUT_SCREEN_HEIGHT<<"\n";*/
-
     glEnd();
-    glColor3f(1,1,1);
-    
-    renderText(10.0f, 10.0f, ("score: " + std::to_string(score)).c_str());
-    
-    /*
-    if (isPressed) {
-		renderText(10.0f, 10.0f, "Mouse pressed%d", score);
-	}
-	else {
-		renderText(10.0f, 10.0f, "Mouse Not Pressed");
-	}*/
-}
-
-// check mouse position when clicked
-void FireworksDemo::mouse(int button, int state, int x, int y)
-{
-    if (state == GLUT_DOWN) {
-    	isPressed = true;
-    	mousex = ((x/(float)width) - 0.5)*23;
-    	mousey = (-(y/(float)height) + 0.5)*11;
-    }
-    else {
-    	isPressed = false;
-    	mousex = 0;
-    	mousey = 0;
-    }
 }
 
 void FireworksDemo::key(unsigned char key)
@@ -597,8 +471,6 @@ void FireworksDemo::key(unsigned char key)
     case '7': create(7, 1, NULL); break;
     case '8': create(8, 1, NULL); break;
     case '9': create(9, 1, NULL); break;
-    case 'q': create(10, 1, NULL); break;
-    case 'w': create(11, 1, NULL); break;
     }
 }
 
