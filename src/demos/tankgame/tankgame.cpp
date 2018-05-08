@@ -342,7 +342,7 @@ void BigBallisticDemo::reset()
 	aimX = 40.0f;
 	aimY = 60.0f;
 	// randomize gravity on round reset
-	grav = (float)(-50 + rand() % 25);
+	grav = (float)(-60 + rand() % 25);
 
 	// Make all shots unused
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
@@ -504,7 +504,7 @@ void BigBallisticDemo::display()
 	strcpy(name_with_extension, text);
 	strcat(name_with_extension, floatText);*/
 	stringstream stream;
-	stream << fixed << setprecision(2) << (grav/2);
+	stream << fixed << setprecision(2) << (grav/5);
 	string s = stream.str();
 	string gravText = "Gravity: " + s + "m/s";
 	int n = gravText.length(); 
