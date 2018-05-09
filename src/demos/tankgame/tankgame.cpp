@@ -94,11 +94,11 @@ public:
 			break;
 
 		case ARTILLERY:
-			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, aimY, aimX); // 50m/s
-			body->setAcceleration(0.0f, grav, wind);
-			body->setDamping(0.99f, 0.8f);
-			radius = 2.0f;
+			body->setMass(10000.0f); // 200.0kg
+			body->setVelocity(0.0f, 100.0f, 20.0f); // 50m/s
+			body->setAcceleration(0.0f, grav, wind/10);
+			body->setDamping(0.50f, 0.8f);
+			radius = 5.0f;
 			break;
 
 		case FIREBALL:
@@ -458,7 +458,7 @@ void BigBallisticDemo::display()
 	glEnd();
 
 	// Render each particle in turn
-	glColor3f(1,0,0);
+	glColor3f(0,0,0);
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 	{
 		if (shot->type != UNUSED)
@@ -506,7 +506,7 @@ void BigBallisticDemo::display()
 	stringstream stream;
 	stream << fixed << setprecision(2) << (grav/5);
 	string s = stream.str();
-	string gravText = "Gravity: " + s + "m/s";
+	string gravText = "Gravity: " + s + " m/s^2";
 	int n = gravText.length(); 
     char grav_array[n+1];
     strcpy(grav_array, gravText.c_str());
@@ -514,7 +514,7 @@ void BigBallisticDemo::display()
     stringstream wstream;
 	wstream << fixed << setprecision(2) << (wind/2);
 	string ws = wstream.str();
-	string windText = "Wind: " + ws + "m/s";
+	string windText = "Wind: " + ws + " m/s";
 	int wn = windText.length(); 
     char wind_array[wn+1];
     strcpy(wind_array, windText.c_str());
