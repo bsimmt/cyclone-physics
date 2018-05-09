@@ -669,14 +669,14 @@ void BigBallisticDemo::generateContacts()
 			{
 
 				if(boxIndex == 20) {
-					if (shot->type == 3) {
+					if (shot->type == 3 || shot->type == 4) {
 						if (!cData.hasMoreContacts()) return;
 
 						// When we get a collision, remove the shot
 						if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
 						{
 							shot->type = UNUSED;
-							float damage = shot->body->getVelocity().z;
+							float damage = shot->body->getVelocity().z * (shot->body->getMass()/750);
 							p1hp -= -damage;
 							if(-damage > 50) {
 								p1pos-=2;
@@ -686,14 +686,14 @@ void BigBallisticDemo::generateContacts()
 					}
 				}
 				else if(boxIndex == 21) {
-					if (shot->type == 1) {
+					if (shot->type == 1 || shot->type == 2) {
 						if (!cData.hasMoreContacts()) return;
 
 						// When we get a collision, remove the shot
 						if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
 						{
 							shot->type = UNUSED;
-							float damage = shot->body->getVelocity().z;
+							float damage = shot->body->getVelocity().z * (shot->body->getMass()/750);
 							p2hp -= damage;
 							if(damage > 50) {
 								p2pos+=2;
