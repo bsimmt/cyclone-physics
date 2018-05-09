@@ -80,7 +80,7 @@ public:
 	{
 		type = shotType;
 		// randomize wind per shot
-		wind = (float)(-25 + rand() % 75);
+		wind = (float)(-20 + rand() % 40);
 
 		// Set the properties of the particle
 		switch(type)
@@ -90,31 +90,35 @@ public:
 			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
+			body->setPosition(0.0f, 1.5f, 0.0f);
 			radius = 2.0f;
 			break;
 
 		case ARTILLERY:
 			body->setMass(10000.0f); // 200.0kg
-			body->setVelocity(0.0f, 100.0f, 20.0f); // 50m/s
+			body->setVelocity(0.0f, 100.0f, 30.0f); // 50m/s
 			body->setAcceleration(0.0f, grav, wind/10);
 			body->setDamping(0.50f, 0.8f);
+			body->setPosition(0.0f, 1.5f, 0.0f);
 			radius = 5.0f;
 			break;
 
 		case FIREBALL:
 			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, aimY, aimX); // 50m/s
+			body->setVelocity(0.0f, aimY, -aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
+			body->setPosition(0.0f, 1.5f, 120.0f);
 			radius = 2.0f;
 			break;
 
 		case LASER:
-			body->setMass(750.0f); // 200.0kg
-			body->setVelocity(0.0f, aimX, aimY); // 50m/s
-			body->setAcceleration(0.0f, grav, wind);
-			body->setDamping(0.99f, 0.8f);
-			radius = 2.0f;
+			body->setMass(10000.0f); // 200.0kg
+			body->setVelocity(0.0f, 100.0f, -30.0f); // 50m/s
+			body->setAcceleration(0.0f, grav, wind/10);
+			body->setDamping(0.50f, 0.8f);
+			body->setPosition(0.0f, 1.5f, 120.0f);
+			radius = 5.0f;
 			break;
 		}
 
@@ -127,7 +131,7 @@ public:
 		body->setInertiaTensor(tensor);
 
 		// Set the data common to all particle types
-		body->setPosition(0.0f, 1.5f, 0.0f);
+		//body->setPosition(0.0f, 1.5f, 0.0f);
 		startTime = TimingData::get().lastFrameTimestamp;
 
 		// Clear the force accumulators
@@ -174,6 +178,9 @@ public:
         }
         else if(randMass > 25) {
         	glColor3f(0.5f,1.0f,0.7f);
+        }
+        else if(body->getMass()==1000) {
+        	glColor3f(1.0f,1.0f,1.0f);
         }
 
         glPushMatrix();
@@ -232,6 +239,33 @@ public:
 		body->calculateDerivedData();
 		calculateInternals();
 	}
+
+	/** Sets the box to a specific location. */
+	void setFixedState(cyclone::real y, cyclone::real z)
+	{
+		body->setPosition(0, y, z);
+		body->setOrientation(1,0,0,0);
+		body->setVelocity(0,0,0);
+		body->setRotation(cyclone::Vector3(0,0,0));
+		halfSize = cyclone::Vector3(5,5,5);
+
+		cyclone::real mass = halfSize.x * halfSize.y * halfSize.z * 1.0f;
+		body->setMass(1000);
+
+		cyclone::Matrix3 tensor;
+		tensor.setBlockInertiaTensor(halfSize, mass);
+		body->setInertiaTensor(tensor);
+
+		body->setLinearDamping(1.0f);
+		body->setAngularDamping(1.0f);
+		body->clearAccumulators();
+		body->setAcceleration(0,-10.0f,0);
+
+		body->setCanSleep(false);
+		body->setAwake();
+
+		body->calculateDerivedData();
+	}
 };
 
 
@@ -252,7 +286,7 @@ class BigBallisticDemo : public RigidBodyApplication
 	/**
 	* Holds the number of boxes in the simulation.
 	*/
-	const static unsigned boxes = 20;
+	const static unsigned boxes = 22;
 
 	/** Holds the box data. */
 	Box boxData[boxes];
@@ -353,8 +387,9 @@ void BigBallisticDemo::reset()
 	}
 
 	// Initialise the box
-	cyclone::real z = 20.0f;
-	cyclone::real y = 0.0f;
+	cyclone::real initial = 40.0f;
+	cyclone::real z = initial;
+	cyclone::real y = 5.0f;
 	int i = 0;
 	for (Box *box = boxData; box < boxData+boxes; box++)
 	{
@@ -362,9 +397,15 @@ void BigBallisticDemo::reset()
 		z += 11.0f;
 		i++;
 		if(i%5 == 0) {
-			z = 20.0f;
+			z = initial;
 			y += 11.0f;
-		}	
+		}
+		if(i==boxes-1) {
+			box->setFixedState(5.0f, 0.0f);
+		}
+		else if(i==boxes) {
+			box->setFixedState(5.0f, 120.0f);
+		}
 	}
 }
 
@@ -415,7 +456,7 @@ void BigBallisticDemo::updateObjects(cyclone::real duration)
 	}
 
 	// Update the boxes
-	for (Box *box = boxData; box < boxData+boxes; box++)
+	for (Box *box = boxData; box < boxData+boxes-2; box++)
 	{
 		// Run the physics
 		box->body->integrate(duration);
@@ -553,7 +594,10 @@ void BigBallisticDemo::generateContacts()
 		if (!cData.hasMoreContacts()) return;
 		cyclone::CollisionDetector::boxAndHalfSpace(*box, plane, &cData);
 
+	}
 
+	for (Box *box = boxData; box < boxData+boxes-2; box++)
+	{
 		// Check for collisions with each shot
 		for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 		{
@@ -570,7 +614,7 @@ void BigBallisticDemo::generateContacts()
 		}
 
 		// Check for collisions with each other box
-        for (Box *other = box+1; other < boxData+boxes; other++)
+        for (Box *other = box+1; other < boxData+boxes-2; other++)
         {
             if (!cData.hasMoreContacts()) return;
             cyclone::CollisionDetector::boxAndBox(*box, *other, &cData);
