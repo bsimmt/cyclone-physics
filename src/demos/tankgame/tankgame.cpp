@@ -42,6 +42,8 @@ public:
 	float wind;
 	float aimX;
 	float aimY;
+	float p1pos;
+	float p2pos;
 
 	AmmoRound()
 	{
@@ -75,6 +77,11 @@ public:
 		AmmoRound::aimY = aimY;
 	}
 
+	void setPos(float p1pos, float p2pos) {
+		AmmoRound::p1pos = p1pos;
+		AmmoRound::p2pos = p2pos;
+	}
+
 	/** Sets the box to a specific location. */
 	void setState(ShotType shotType)
 	{
@@ -90,7 +97,7 @@ public:
 			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
-			body->setPosition(0.0f, 1.5f, 0.0f);
+			body->setPosition(0.0f, 1.5f, p1pos);
 			radius = 2.0f;
 			break;
 
@@ -99,7 +106,7 @@ public:
 			body->setVelocity(0.0f, 100.0f, 30.0f); // 50m/s
 			body->setAcceleration(0.0f, grav, wind/10);
 			body->setDamping(0.50f, 0.8f);
-			body->setPosition(0.0f, 1.5f, 0.0f);
+			body->setPosition(0.0f, 1.5f, p1pos);
 			radius = 5.0f;
 			break;
 
@@ -108,7 +115,7 @@ public:
 			body->setVelocity(0.0f, aimY, -aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
 			body->setDamping(0.99f, 0.8f);
-			body->setPosition(0.0f, 1.5f, 120.0f);
+			body->setPosition(0.0f, 1.5f, p2pos);
 			radius = 2.0f;
 			break;
 
@@ -117,7 +124,7 @@ public:
 			body->setVelocity(0.0f, 100.0f, -30.0f); // 50m/s
 			body->setAcceleration(0.0f, grav, wind/10);
 			body->setDamping(0.50f, 0.8f);
-			body->setPosition(0.0f, 1.5f, 120.0f);
+			body->setPosition(0.0f, 1.5f, p2pos);
 			radius = 5.0f;
 			break;
 		}
@@ -180,7 +187,7 @@ public:
         	glColor3f(0.5f,1.0f,0.7f);
         }
         else if(body->getMass()==1000) {
-        	glColor3f(1.0f,1.0f,1.0f);
+        	glColor3f(1.0f,-1.0f,-1.0f);
         }
 
         glPushMatrix();
@@ -326,6 +333,12 @@ class BigBallisticDemo : public RigidBodyApplication
 	float aimX;
 	float aimY;
 
+	float p1hp;
+	float p2hp;
+
+	float p1pos;
+	float p2pos;
+
 
 public:
 	/** Creates a new demo object. */
@@ -375,6 +388,12 @@ void BigBallisticDemo::reset()
 {
 	aimX = 40.0f;
 	aimY = 60.0f;
+
+	p1hp = 1000.0f;
+	p2hp = 1000.0f;
+
+	p1pos = 0.0f;
+	p2pos = 120.0f;
 	// randomize gravity on round reset
 	grav = (float)(-60 + rand() % 25);
 
@@ -401,10 +420,10 @@ void BigBallisticDemo::reset()
 			y += 11.0f;
 		}
 		if(i==boxes-1) {
-			box->setFixedState(5.0f, 0.0f);
+			box->setFixedState(5.0f, p1pos);
 		}
 		else if(i==boxes) {
-			box->setFixedState(5.0f, 120.0f);
+			box->setFixedState(5.0f, p2pos);
 		}
 	}
 }
@@ -434,9 +453,24 @@ void BigBallisticDemo::fire()
 
 void BigBallisticDemo::updateObjects(cyclone::real duration)
 {
+	if(p1pos > 25) {
+		p1pos--;
+	}
+	else if(p1pos < -25) {
+		p1pos++;
+	}
+
+	if(p2pos < 80) {
+		p2pos++;
+	}
+	else if(p2pos > 140) {
+		p2pos--;
+	}
+
 	// Update the physics of each particle in turn
 	for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 	{
+		shot->setPos(p1pos, p2pos);
 		if (shot->type != UNUSED)
 		{
 			// Run the physics
@@ -455,13 +489,23 @@ void BigBallisticDemo::updateObjects(cyclone::real duration)
 		}
 	}
 
+	int boxIndex = 0;
 	// Update the boxes
-	for (Box *box = boxData; box < boxData+boxes-2; box++)
+	for (Box *box = boxData; box < boxData+boxes; box++)
 	{
-		// Run the physics
-		box->body->integrate(duration);
-		box->calculateInternals();
-		box->isOverlapping = false;
+		if(boxIndex == 20) {
+			box->setFixedState(5.0f, p1pos);
+		}
+		else if(boxIndex == 21) {
+			box->setFixedState(5.0f, p2pos);
+		}
+		else {
+			// Run the physics
+			box->body->integrate(duration);
+			box->calculateInternals();
+			box->isOverlapping = false;
+		}
+		boxIndex++;
 	}
 
 
@@ -560,8 +604,26 @@ void BigBallisticDemo::display()
     char wind_array[wn+1];
     strcpy(wind_array, windText.c_str());
 
-	renderText(10.0f, 34.0f, grav_array);
+    stringstream hp1stream;
+	hp1stream << fixed << setprecision(2) << p1hp;
+	string hp1s = hp1stream.str();
+	string hp1text = "P1 HP: " + hp1s;
+	int hp1n = hp1text.length(); 
+    char hp1array[hp1n+1];
+    strcpy(hp1array, hp1text.c_str());
+
+    stringstream hp2stream;
+	hp2stream << fixed << setprecision(2) << p2hp;
+	string hp2s = hp2stream.str();
+	string hp2text = "P2 HP: " + hp2s;
+	int hp2n = hp2text.length(); 
+    char hp2array[hp2n+1];
+    strcpy(hp2array, hp2text.c_str());
+
+	renderText(10.0f, 30.0f, grav_array);
 	renderText(10.0f, 10.0f, wind_array);
+	renderText(10.0f, 300.0f, hp2array);
+	renderText(10.0f, 310.0f, hp1array);
 
 	// Render the name of the current shot type
 	/*
@@ -596,19 +658,60 @@ void BigBallisticDemo::generateContacts()
 
 	}
 
-	for (Box *box = boxData; box < boxData+boxes-2; box++)
+	int boxIndex = 0;
+
+	for (Box *box = boxData; box < boxData+boxes; box++)
 	{
 		// Check for collisions with each shot
 		for (AmmoRound *shot = ammo; shot < ammo+ammoRounds; shot++)
 		{
 			if (shot->type != UNUSED)
 			{
-				if (!cData.hasMoreContacts()) return;
 
-				// When we get a collision, remove the shot
-				if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
-				{
-					shot->type = UNUSED;
+				if(boxIndex == 20) {
+					if (shot->type == 3) {
+						if (!cData.hasMoreContacts()) return;
+
+						// When we get a collision, remove the shot
+						if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
+						{
+							shot->type = UNUSED;
+							float damage = shot->body->getVelocity().z;
+							p1hp -= -damage;
+							if(-damage > 50) {
+								p1pos-=2;
+							}
+						}
+						
+					}
+				}
+				else if(boxIndex == 21) {
+					if (shot->type == 1) {
+						if (!cData.hasMoreContacts()) return;
+
+						// When we get a collision, remove the shot
+						if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
+						{
+							shot->type = UNUSED;
+							float damage = shot->body->getVelocity().z;
+							p2hp -= damage;
+							if(damage > 50) {
+								p2pos+=2;
+							}
+						}
+					}
+				}
+				else {
+					if (!cData.hasMoreContacts()) return;
+
+					// When we get a collision, remove the shot
+					if (cyclone::CollisionDetector::boxAndSphere(*box, *shot, &cData))
+					{
+						shot->type = UNUSED;
+					}
+				}
+				if(p1hp < 0 || p2hp < 0) {
+					reset();
 				}
 			}
 		}
@@ -624,6 +727,7 @@ void BigBallisticDemo::generateContacts()
                 box->isOverlapping = other->isOverlapping = true;
             }
         }
+        boxIndex++;
 	}
 
 	// NB We aren't checking box-box collisions.
@@ -646,8 +750,13 @@ void BigBallisticDemo::key(unsigned char key)
 
 	case 'r': reset(); break;
 
-	case 'w': aimX+=10.0; aimY-=10; break;
-	case 's': aimX-=10.0; aimY+=10; break;
+	case 'w': aimX-=10.0f; aimY+=10.0f; break;
+	case 's': aimX+=10.0f; aimY-=10.0f; break;
+
+	case 'a': p1pos+=-1.0f; break;
+	case 'd': p1pos+=1.0f; break;
+	case 'j': p2pos+=-1.0f; break;
+	case 'l': p2pos+=1.0f; break;
 
 	/*
 	case 'a': x1+=1.0; break;
