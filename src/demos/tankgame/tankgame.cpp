@@ -27,10 +27,10 @@ using namespace std;
 enum ShotType
 {
 	UNUSED = 0,
-	PISTOL,
-	ARTILLERY,
-	FIREBALL,
-	LASER
+	P1ARTILLERY,
+	P1BOMB,
+	P2ARTILLERY,
+	P2BOMB
 };
 
 class AmmoRound : public cyclone::CollisionSphere
@@ -92,7 +92,7 @@ public:
 		// Set the properties of the particle
 		switch(type)
 		{
-		case PISTOL:
+		case P1ARTILLERY:
 			body->setMass(750.0f); // 200.0kg
 			body->setVelocity(0.0f, aimY, aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
@@ -101,7 +101,7 @@ public:
 			radius = 2.0f;
 			break;
 
-		case ARTILLERY:
+		case P1BOMB:
 			body->setMass(10000.0f); // 200.0kg
 			body->setVelocity(0.0f, 100.0f, 30.0f); // 50m/s
 			body->setAcceleration(0.0f, grav, wind/10);
@@ -110,7 +110,7 @@ public:
 			radius = 5.0f;
 			break;
 
-		case FIREBALL:
+		case P2ARTILLERY:
 			body->setMass(750.0f); // 200.0kg
 			body->setVelocity(0.0f, aimY, -aimX); // 50m/s
 			body->setAcceleration(0.0f, grav, wind);
@@ -119,7 +119,7 @@ public:
 			radius = 2.0f;
 			break;
 
-		case LASER:
+		case P2BOMB:
 			body->setMass(10000.0f); // 200.0kg
 			body->setVelocity(0.0f, 100.0f, -30.0f); // 50m/s
 			body->setAcceleration(0.0f, grav, wind/10);
@@ -310,6 +310,10 @@ class BigBallisticDemo : public RigidBodyApplication
 	/** Processes the objects in the simulation forward in time. */
 	virtual void updateObjects(cyclone::real duration);
 
+	virtual void renderString(string text1, string text2, float stats, float x, float y);
+
+	virtual void renderString(string text1, float x, float y);
+
 	/** Dispatches a round. */
 	void fire();
 
@@ -339,6 +343,7 @@ class BigBallisticDemo : public RigidBodyApplication
 	float p1pos;
 	float p2pos;
 
+	string shotType;
 
 public:
 	/** Creates a new demo object. */
@@ -364,7 +369,7 @@ public:
 BigBallisticDemo::BigBallisticDemo()
 :
 RigidBodyApplication(),
-currentShotType(LASER)
+currentShotType(P1ARTILLERY)
 {
 	pauseSimulation = false;
 	reset();
@@ -394,6 +399,8 @@ void BigBallisticDemo::reset()
 
 	p1pos = 0.0f;
 	p2pos = 120.0f;
+
+	shotType = "P1 Artillery";
 	// randomize gravity on round reset
 	grav = (float)(-60 + rand() % 25);
 
@@ -569,72 +576,34 @@ void BigBallisticDemo::display()
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST);
 
-
-	/* draw aiming line
-	glLineWidth(3); 
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glBegin(GL_LINES);
-	glVertex3f(0.0f, 2.0f, 0.0f);
-	glVertex3f(0.0f, 2.0f, 10.0f);
-	glEnd();
-	*/
-
 	// Render the description
 	glColor3f(0.0f, 0.0f, 0.0f);
-	/*
-	char *text = "Gravity: ";
-	char *floatText = to_string(grav);
-	char *gravText;
-	gravText = malloc(strlen(text)+1+4);
-	strcpy(name_with_extension, text);
-	strcat(name_with_extension, floatText);*/
+
+	BigBallisticDemo::renderString("Gravity: ", " m/s^2", grav/5, 10.0f, 30.0f);
+	BigBallisticDemo::renderString("Wind: ", " m/s", wind/2, 10.0f, 10.0f);
+	BigBallisticDemo::renderString("P1 HP: ", "", p1hp, 10.0f, 300.0f);
+	BigBallisticDemo::renderString("P2 HP: ", "", p2hp, 10.0f, 310.0f);
+	BigBallisticDemo::renderString("Aiming: ", "", aimX, 10.0f, 50.0f);
+	BigBallisticDemo::renderString(shotType, 10.0f, 70.0f);
+}
+
+void BigBallisticDemo::renderString(string text1, string text2, float stats, float x, float y) {
 	stringstream stream;
-	stream << fixed << setprecision(2) << (grav/5);
+	stream << fixed << setprecision(2) << stats;
 	string s = stream.str();
-	string gravText = "Gravity: " + s + " m/s^2";
-	int n = gravText.length(); 
-    char grav_array[n+1];
-    strcpy(grav_array, gravText.c_str());
+	string rText = text1 + s + text2;
+	int n = rText.length(); 
+    char charArr[n+1];
+    strcpy(charArr, rText.c_str());
+    renderText(x, y, charArr);
+}
 
-    stringstream wstream;
-	wstream << fixed << setprecision(2) << (wind/2);
-	string ws = wstream.str();
-	string windText = "Wind: " + ws + " m/s";
-	int wn = windText.length(); 
-    char wind_array[wn+1];
-    strcpy(wind_array, windText.c_str());
-
-    stringstream hp1stream;
-	hp1stream << fixed << setprecision(2) << p1hp;
-	string hp1s = hp1stream.str();
-	string hp1text = "P1 HP: " + hp1s;
-	int hp1n = hp1text.length(); 
-    char hp1array[hp1n+1];
-    strcpy(hp1array, hp1text.c_str());
-
-    stringstream hp2stream;
-	hp2stream << fixed << setprecision(2) << p2hp;
-	string hp2s = hp2stream.str();
-	string hp2text = "P2 HP: " + hp2s;
-	int hp2n = hp2text.length(); 
-    char hp2array[hp2n+1];
-    strcpy(hp2array, hp2text.c_str());
-
-	renderText(10.0f, 30.0f, grav_array);
-	renderText(10.0f, 10.0f, wind_array);
-	renderText(10.0f, 300.0f, hp2array);
-	renderText(10.0f, 310.0f, hp1array);
-
-	// Render the name of the current shot type
-	/*
-	switch(currentShotType)
-	{
-	case PISTOL: renderText(10.0f, 10.0f, "Current Ammo: Pistol"); break;
-	case ARTILLERY: renderText(10.0f, 10.0f, "Current Ammo: Artillery"); break;
-	case FIREBALL: renderText(10.0f, 10.0f, "Current Ammo: Fireball"); break;
-	case LASER: renderText(10.0f, 10.0f, "Current Ammo: Laser"); break;
-	}
-	*/
+void BigBallisticDemo::renderString(string text1, float x, float y) {
+	string rText = text1;
+	int n = rText.length(); 
+    char charArr[n+1];
+    strcpy(charArr, rText.c_str());
+    renderText(x, y, charArr);
 }
 
 void BigBallisticDemo::generateContacts()
@@ -743,10 +712,10 @@ void BigBallisticDemo::key(unsigned char key)
 {
 	switch(key)
 	{
-	case '1': currentShotType = PISTOL; break;
-	case '2': currentShotType = ARTILLERY; break;
-	case '3': currentShotType = FIREBALL; break;
-	case '4': currentShotType = LASER; break;
+	case '1': currentShotType = P1ARTILLERY; shotType = "P1 Artillery"; break;
+	case '2': currentShotType = P1BOMB; shotType = "P1 Bomb"; break;
+	case '3': currentShotType = P2ARTILLERY; shotType = "P2 Artillery"; break;
+	case '4': currentShotType = P2BOMB; shotType = "P2 Bomb"; break;
 
 	case 'r': reset(); break;
 
@@ -757,29 +726,7 @@ void BigBallisticDemo::key(unsigned char key)
 	case 'd': p1pos+=1.0f; break;
 	case 'j': p2pos+=-1.0f; break;
 	case 'l': p2pos+=1.0f; break;
-
-	/*
-	case 'a': x1+=1.0; break;
-	case 's': y1+=1.0; break;
-	case 'd': z1+=1.0; break;
-	case 'z': x1-=1.0; break;
-	case 'x': y1-=1.0; break;
-	case 'c': z1-=1.0; break;
-
-	case 'h': x2+=1.0; break;
-	case 'j': y2+=1.0; break;
-	case 'k': z2+=1.0; break;
-	case 'b': x2-=1.0; break;
-	case 'n': y2-=1.0; break;
-	case 'm': z2-=1.0; break;
-	*/
-
 	}
-
-	
-	std::cout << "aimX:" << aimX << std::endl;
-	
-
 }
 
 /**
